@@ -1,0 +1,11 @@
+name: Slack Triggered Deploy
+
+on:
+  repository_dispatch:
+    types: [slack-deploy]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "🚀 Deployment triggered from Slack!"
