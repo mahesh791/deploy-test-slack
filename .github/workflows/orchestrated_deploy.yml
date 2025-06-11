@@ -68,4 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ needs.extract.outputs.frontend_version != 'null' }}
     steps:
-      - run: echo "Deploying frontend-service v${{ needs.extract.outputs.frontend_version }}"
+      - name: Error scenario
+        run: |
+          exit 1
+          echo "Deploying frontend-service v${{ needs.extract.outputs.frontend_version }}"
