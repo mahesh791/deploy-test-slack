@@ -56,8 +56,15 @@ jobs:
     steps:
       - run: echo "Deploying notification-service v${{ needs.extract.outputs.notif_version }}"
 
+  billing-service:
+    needs: user-service
+    runs-on: ubuntu-latest
+    if: ${{ needs.extract.outputs.user_version != 'null' }}
+    steps:
+      - run: echo "Deploying billing-service v${{ needs.extract.outputs.user_version }}"
+
   frontend-service:
-    needs: [user-service, notification-service]
+    needs: [billing-service, notification-service]
     runs-on: ubuntu-latest
     if: ${{ needs.extract.outputs.frontend_version != 'null' }}
     steps:
