@@ -1,0 +1,15 @@
+name: Slack Triggered Deploy
+
+on:
+  repository_dispatch:
+    types: [slack-deploy]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read Inputs
+        run: |
+          echo "Triggered by: ${{ github.event.client_payload.triggered_by }}"
+          echo "Service: ${{ github.event.client_payload.service }}"
+          echo "Version: ${{ github.event.client_payload.version }}"
