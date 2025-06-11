@@ -1,0 +1,61 @@
+name: Orchestrated Deploy
+
+on:
+  repository_dispatch:
+    types: [orchestrated-deploy]
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    outputs:
+      auth_version: ${{ steps.set.outputs.auth_version }}
+      user_version: ${{ steps.set.outputs.user_version }}
+      notif_version: ${{ steps.set.outputs.notif_version }}
+      frontend_version: ${{ steps.set.outputs.frontend_version }}
+    steps:
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Save input
+        run: |
+          echo '${{ toJson(github.event.client_payload.deployments) }}' > deployments.json
+
+      - name: Set outputs
+        id: set
+        run: |
+          get_version() {
+            jq -r --arg svc "$1" '.[] | select(.service==$svc) | .version' deployments.json
+          }
+
+          echo "::set-output name=auth_version::$(get_version auth-service)"
+          echo "::set-output name=user_version::$(get_version user-service)"
+          echo "::set-output name=notif_version::$(get_version notification-service)"
+          echo "::set-output name=frontend_version::$(get_version frontend-service)"
+
+  deploy-auth:
+    needs: extract
+    runs-on: ubuntu-latest
+    if: ${{ needs.extract.outputs.auth_version != 'null' }}
+    steps:
+      - run: echo "Deploying auth-service v${{ needs.extract.outputs.auth_version }}"
+
+  deploy-user:
+    needs: deploy-auth
+    runs-on: ubuntu-latest
+    if: ${{ needs.extract.outputs.user_version != 'null' }}
+    steps:
+      - run: echo "Deploying user-service v${{ needs.extract.outputs.user_version }}"
+
+  deploy-notification:
+    needs: deploy-auth
+    runs-on: ubuntu-latest
+    if: ${{ needs.extract.outputs.notif_version != 'null' }}
+    steps:
+      - run: echo "Deploying notification-service v${{ needs.extract.outputs.notif_version }}"
+
+  deploy-frontend:
+    needs: [deploy-user, deploy-notification]
+    runs-on: ubuntu-latest
+    if: ${{ needs.extract.outputs.frontend_version != 'null' }}
+    steps:
+      - run: echo "Deploying frontend-service v${{ needs.extract.outputs.frontend_version }}"
