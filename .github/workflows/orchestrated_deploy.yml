@@ -1,8 +1,9 @@
-name: Orchestrated Deploy
+
+name: Orchestrated Parallel Deploy
 
 on:
   repository_dispatch:
-    types: [orchestrated-deploy]
+    types: [orchestrated-deploy] 
 
 jobs:
   extract:
@@ -20,17 +21,19 @@ jobs:
         run: |
           echo '${{ toJson(github.event.client_payload.deployments) }}' > deployments.json
 
-      - name: Set outputs
+      - name: Set outputs using environment file
         id: set
         run: |
           get_version() {
             jq -r --arg svc "$1" '.[] | select(.service==$svc) | .version' deployments.json
           }
 
-          echo "::set-output name=auth_version::$(get_version auth-service)"
-          echo "::set-output name=user_version::$(get_version user-service)"
-          echo "::set-output name=notif_version::$(get_version notification-service)"
-          echo "::set-output name=frontend_version::$(get_version frontend-service)"
+          {
+            echo "auth_version=$(get_version auth-service)"
+            echo "user_version=$(get_version user-service)"
+            echo "notif_version=$(get_version notification-service)"
+            echo "frontend_version=$(get_version frontend-service)"
+          } >> "$GITHUB_OUTPUT"
 
   deploy-auth:
     needs: extract
